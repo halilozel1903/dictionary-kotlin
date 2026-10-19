@@ -1,0 +1,17 @@
+[
+  {
+    "word": "ice cream",
+    "phonetics": [],
+    "meanings": [
+      {
+        "partOfSpeech": "noun",
+        "definitions": [
+          { "definition": "A dessert made of frozen, sweetened cream.", "synonyms": [], "antonyms": [] }
+        ],
+        "synonyms": [],
+        "antonyms": []
+      }
+    ],
+    "sourceUrls": ["https://en.wiktionary.org/wiki/ice_cream"]
+  }
+]

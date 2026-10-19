@@ -1,0 +1,60 @@
+[
+  {
+    "word": "bass",
+    "phonetic": "/bæs/",
+    "phonetics": [
+      { "text": "/bæs/", "audio": "//ssl.gstatic.com/dictionary/static/sounds/20200429/bass--_gb_1.mp3" }
+    ],
+    "origin": "Old English bærs.",
+    "meanings": [
+      {
+        "partOfSpeech": "noun",
+        "definitions": [
+          {
+            "definition": "The perch, Perca fluviatilis.",
+            "synonyms": ["perch"],
+            "antonyms": []
+          }
+        ],
+        "synonyms": [],
+        "antonyms": []
+      }
+    ],
+    "license": { "name": "CC BY-SA 3.0", "url": "https://creativecommons.org/licenses/by-sa/3.0" },
+    "sourceUrls": ["https://en.wiktionary.org/wiki/bass"]
+  },
+  {
+    "word": "bass",
+    "phonetic": "/beɪs/",
+    "phonetics": [
+      { "text": "/beɪs/", "audio": "https://api.dictionaryapi.dev/media/pronunciations/en/bass-us.mp3" },
+      { "text": "/bæs/", "audio": "//ssl.gstatic.com/dictionary/static/sounds/20200429/bass--_gb_1.mp3" }
+    ],
+    "meanings": [
+      {
+        "partOfSpeech": "Noun",
+        "definitions": [
+          {
+            "definition": "A low spectrum of sound tones.",
+            "example": "Turn up the bass.",
+            "synonyms": ["low end"],
+            "antonyms": ["treble"]
+          },
+          { "definition": "A bass guitar.", "synonyms": [], "antonyms": [] }
+        ],
+        "synonyms": ["Low End"],
+        "antonyms": ["treble"]
+      },
+      {
+        "partOfSpeech": "adjective",
+        "definitions": [
+          { "definition": "Of sound, a voice or an instrument, low in pitch or frequency.", "synonyms": ["deep", "low"], "antonyms": ["high"] }
+        ],
+        "synonyms": [],
+        "antonyms": []
+      }
+    ],
+    "license": { "name": "CC BY-SA 3.0", "url": "https://creativecommons.org/licenses/by-sa/3.0" },
+    "sourceUrls": ["https://en.wiktionary.org/wiki/bass"]
+  }
+]
