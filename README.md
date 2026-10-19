@@ -42,7 +42,7 @@ Captured by CI on a Wear OS emulator (large round) with **live data**: every scr
 CI writes the next line on each run:
 
 <!-- screenshot-source -->
-No screenshots have been captured yet.
+The screenshots below came from **Wiktionary's REST API** (`DictionarySource.Wiktionary`), because api.dictionaryapi.dev answered GitHub's runner with a Cloudflare challenge (HTTP 403), so the word screen has no phonetic or play button and the synonyms screen is not pictured: Wiktionary's definition endpoint has no recordings and no synonyms.
 <!-- /screenshot-source -->
 
 | Lookup | Word | Meanings |
