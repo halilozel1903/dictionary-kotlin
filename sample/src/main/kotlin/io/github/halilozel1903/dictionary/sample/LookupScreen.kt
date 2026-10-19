@@ -31,6 +31,7 @@ import androidx.wear.compose.material3.lazy.rememberTransformationSpec
 import androidx.wear.compose.material3.lazy.transformedHeight
 import androidx.wear.input.RemoteInputIntentHelper
 import io.github.halilozel1903.dictionary.DictionaryClient
+import io.github.halilozel1903.dictionary.DictionarySource
 import io.github.halilozel1903.dictionary.model.LookupResult
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
@@ -148,7 +149,10 @@ fun LookupScreen(
             }
             item {
                 Text(
-                    "Free Dictionary API · Wiktionary",
+                    when (client.source) {
+                        DictionarySource.FreeDictionary -> "Free Dictionary API · Wiktionary"
+                        DictionarySource.Wiktionary -> "Wiktionary · CC BY-SA 4.0"
+                    },
                     style = MaterialTheme.typography.bodyExtraSmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     textAlign = TextAlign.Center,

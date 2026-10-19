@@ -12,10 +12,19 @@ import kotlin.time.Duration.Companion.hours
 
 /** Settings for [DictionaryClient], set in its builder block. */
 public class DictionaryConfig internal constructor() {
-    /** The API root, [DictionaryClient.DEFAULT_BASE_URL] (`https://api.dictionaryapi.dev/api/v2/entries/`). */
-    public var baseUrl: String = DictionaryClient.DEFAULT_BASE_URL
+    /**
+     * Where words are looked up: the [Free Dictionary API][DictionarySource.FreeDictionary] (the default) or
+     * [Wiktionary's REST API][DictionarySource.Wiktionary]. Both answer with the same model.
+     */
+    public var source: DictionarySource = DictionarySource.FreeDictionary
 
-    /** The language code in the url. The Free Dictionary API serves English (`en`). */
+    /** The API root, or `null` (the default) for the [source]'s own, [DictionarySource.defaultBaseUrl]. */
+    public var baseUrl: String? = null
+
+    /**
+     * The language code. The Free Dictionary API serves English (`en`) and puts it in the url; with Wiktionary it
+     * picks the language section of the page.
+     */
     public var language: String = DictionaryClient.ENGLISH
 
     /**

@@ -107,7 +107,11 @@ fun WordLoaded(
     Loaded(
         load.state,
         onRetry = load::retry,
-        detail = { result -> (result as? LookupResult.Found)?.lookup?.let { "${it.word}: ${it.definitions.size} definitions, ${it.synonyms.size} synonyms" } ?: "" },
+        detail = { result ->
+            (result as? LookupResult.Found)?.lookup?.let {
+                "${it.word}: ${it.definitions.size} definitions, ${it.synonyms.size} synonyms (${client.source.displayName})"
+            } ?: ""
+        },
         problem = { result ->
             when (result) {
                 is LookupResult.NotFound -> "${result.title} for \"${result.query}\""

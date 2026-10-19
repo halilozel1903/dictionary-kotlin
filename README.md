@@ -15,6 +15,8 @@
 
 **dictionary-kotlin** is a Kotlin client for the [Free Dictionary API](https://dictionaryapi.dev), a free English dictionary with no API key, built from Wiktionary. Look a word up with one `suspend` call and get typed entries: the word, its phonetic transcriptions with pronunciation recordings (absolute https MP3 urls, with their accent), its meanings by part of speech, definitions with example sentences, synonyms and antonyms, the source pages and licenses. A word the dictionary does not know comes back as a typed `LookupResult.NotFound` with the API's own "No Definitions Found" texts, not as an exception. Answers are cached, including "not found" ones, and identical lookups running at the same time share one request.
 
+A second keyless source, **Wiktionary's own REST API**, can be selected with `source = DictionarySource.Wiktionary` and answers with the same model (definitions, examples and inline synonyms and antonyms, but no phonetics or recordings).
+
 The library is pure Kotlin/JVM (Ktor and kotlinx.serialization), so it runs on Android, Wear OS, the server and in tests. The sample is a **Wear OS pocket dictionary** built with Compose for Wear OS and Material 3.
 
 ```kotlin
@@ -35,11 +37,17 @@ when (val result = dictionary.lookup("serendipity")) {
 
 ## Screenshots
 
-Captured by CI on a Wear OS emulator (large round) with **live data**: every screen looks its words up in `api.dictionaryapi.dev` during the run, with no cache and no recorded responses. If the API cannot be reached, answers with an error or does not know a word, the screen reports it, the screenshot step fails and the old screenshots stay. JSON fixtures are used only by the unit tests.
+Captured by CI on a Wear OS emulator (large round) with **live data**: every screen looks its words up during the run, with no cache and no recorded responses. Before the emulator starts, CI asks the Free Dictionary API (`api.dictionaryapi.dev`) for a word. If it answers, the screenshots use it. If it refuses, as its Cloudflare protection currently does for GitHub's runners (an HTTP 403 challenge for any User-Agent), the sample is started with Wiktionary's REST API (`en.wiktionary.org`) instead, the other source this library supports. If neither answers, an entry cannot be loaded or a word is unknown, the screenshot step fails and the old screenshots stay. JSON fixtures are used only by the unit tests.
+
+CI writes the next line on each run:
+
+<!-- screenshot-source -->
+No screenshots have been captured yet.
+<!-- /screenshot-source -->
 
 | Lookup | Word | Meanings | Synonyms |
 | :---: | :---: | :---: | :---: |
-| <img src="docs/screenshots/wear-lookup.png" alt="The lookup screen on a round watch: a button to type, speak or write a word and suggested words with their phonetic and part of speech" width="200"> | <img src="docs/screenshots/wear-word.png" alt="The word serendipity with its phonetic, a play pronunciation button, its part of speech and its first definition" width="200"> | <img src="docs/screenshots/wear-meanings.png" alt="The meanings pager of the word light: one page per part of speech with numbered definitions and examples" width="200"> | <img src="docs/screenshots/wear-synonyms.png" alt="The synonyms and antonyms of the word happy as chips" width="200"> |
+| <img src="docs/screenshots/wear-lookup.png" alt="The lookup screen on a round watch: a button to type, speak or write a word and suggested words with their phonetic and part of speech" width="200"> | <img src="docs/screenshots/wear-word.png" alt="The word serendipity with its part of speech and its first definition, plus its phonetic and a play button when the source has a recording" width="200"> | <img src="docs/screenshots/wear-meanings.png" alt="The meanings pager of the word light: one page per part of speech with numbered definitions and examples" width="200"> | <img src="docs/screenshots/wear-synonyms.png" alt="The synonyms and antonyms of the word happy as chips" width="200"> |
 
 ## Features
 
@@ -52,7 +60,8 @@ Captured by CI on a Wear OS emulator (large round) with **live data**: every scr
 - **Recent lookups**: `RecentLookups`, a small most-recent-first list without duplicates, easy to save in SharedPreferences or DataStore.
 - **Coroutines**: every call is main-safe; identical lookups running at the same time share one network call. Words are trimmed, whitespace is collapsed and they are lowercased, so "Hello " and "hello" share one cache entry; phrases like "ice cream" work.
 - **Pluggable HTTP**: Ktor with the CIO engine by default; pass OkHttp, Android or Java, a `MockEngine`, a ready `HttpClient`, or replace HTTP with your own `DictionaryTransport`.
-- **Explicit API**, unit tested against JSON fixtures in the API's response format (no network in tests).
+- **Two keyless sources**: the Free Dictionary API (default) or Wiktionary's REST definition endpoint (`DictionarySource.Wiktionary`), mapped into the same `WordLookup`. Wiktionary's definition HTML becomes plain text, and the synonyms and antonyms it lists under a definition become `Definition.synonyms` and `antonyms`. It has no phonetics or recordings, so `phonetic` and `pronunciation()` are `null`.
+- **Explicit API**, unit tested against JSON fixtures in each API's response format (no network in tests).
 
 ### API
 
@@ -60,6 +69,7 @@ Captured by CI on a Wear OS emulator (large round) with **live data**: every scr
 | --- | --- | --- |
 | `GET /api/v2/entries/en/{word}` | `lookup(word)` | `LookupResult` (`Found` or `NotFound`) |
 | `GET /api/v2/entries/en/{word}` | `lookupOrNull(word)` | `WordLookup?` |
+| Wiktionary: `GET /api/rest_v1/page/definition/{word}` | `lookup(word)`, `lookupOrNull(word)` with `source = DictionarySource.Wiktionary` | the same, without phonetics |
 | (none) | `urlOf(word)`, `evict(word)`, `clearCache()` | the request url; cache control |
 
 | Model | Members |
@@ -73,6 +83,8 @@ Captured by CI on a Wear OS emulator (large round) with **live data**: every scr
 | `Definition` | `definition`, `example`, `synonyms`, `antonyms` |
 | `RecentLookups` | `add(word)`, `remove(word)`, `clear()`, `toList()`, `size`, `maxSize` |
 | `DictionaryJson` | `parseEntries(body)`, `parseNotFound(query, body)` |
+| `WiktionaryJson` | `parseEntries(word, language, body)`, `pageUrl(word)`, `LICENSE` |
+| `DictionarySource` | `FreeDictionary`, `Wiktionary`; `defaultBaseUrl`, `displayName` |
 
 ## Installation
 
@@ -109,6 +121,7 @@ dependencies {
 
 ```kotlin
 val dictionary = DictionaryClient {
+    source = DictionarySource.FreeDictionary     // or DictionarySource.Wiktionary
     engine = OkHttp.create()                     // default: CIO
     cache = DictionaryCache.memory(maxEntries = 32)
     cachePolicy = CachePolicy.CacheFirst         // or FreshOnly, NetworkOnly
@@ -122,6 +135,21 @@ dictionary.close()
 ```
 
 Create one client and share it; it is safe to use from many coroutines.
+
+**Use Wiktionary instead**
+
+```kotlin
+val wiktionary = DictionaryClient {
+    source = DictionarySource.Wiktionary
+    userAgent = "MyApp/1.0 (https://example.com/contact)"   // Wikimedia asks for a way to contact you
+}
+val word = wiktionary.lookupOrNull("happy") ?: return
+word.definitions                                 // plain text, from Wiktionary's definition HTML
+word.synonyms                                    // the synonyms Wiktionary lists under the definitions
+word.pronunciation()                             // null: this endpoint has no recordings
+```
+
+Wiktionary titles are case-sensitive; like the Free Dictionary API source, the client lowercases the word.
 
 **Look a word up**
 
@@ -181,15 +209,15 @@ prefs.edit { putString("recent", recent.toList().joinToString("\n")) }
 The [`sample`](sample) module is a standalone Wear OS app (Compose for Wear OS, Material 3) built on this library:
 
 - **Lookup**: a button that opens the watch's text input (keyboard, voice or handwriting), a short list of suggested words with their phonetic and part of speech, and your recent lookups (kept with `RecentLookups` in SharedPreferences).
-- **Word**: the word, its phonetic, a play button for the pronunciation recording, its parts of speech and its first definition with an example. Words the dictionary does not know show the API's "No Definitions Found" message.
+- **Word**: the word, its phonetic, a play button for the pronunciation recording (hidden when the source has no recording), its parts of speech and its first definition with an example. Words the dictionary does not know show the API's "No Definitions Found" message.
 - **Meanings**: a horizontal pager with one page per part of speech, numbered definitions and examples.
 - **Synonyms**: synonyms and antonyms as chips; tap one to look it up.
 
-Lists use `TransformingLazyColumn` in a `ScreenScaffold`, so items morph at the round edges and stay clear of the time; swipe right or press back to go back. Screenshots are made by `scripts/screenshots.sh` on the CI emulator: it opens each screen with `--es scene lookup|word|meanings|synonyms`, waits for the app to log `SCENE_READY` after the live entry is on screen, and fails on `SCENE_FAILED`.
+Lists use `TransformingLazyColumn` in a `ScreenScaffold`, so items morph at the round edges and stay clear of the time; swipe right or press back to go back. Screenshots are made by `scripts/screenshots.sh` on the CI emulator: it opens each screen with `--es scene lookup|word|meanings|synonyms` and the live source with `--es source freedictionary|wiktionary`, waits for the app to log `SCENE_READY` after the live entry is on screen, and fails on `SCENE_FAILED`.
 
 ## Credits
 
-Definitions by the [Free Dictionary API](https://dictionaryapi.dev) ([source](https://github.com/meetDeveloper/freeDictionaryAPI)), built from [Wiktionary](https://en.wiktionary.org) content under CC BY-SA. Each entry carries its license and source urls; show them when you display definitions. This library is not affiliated with the Free Dictionary API or Wiktionary.
+Definitions by the [Free Dictionary API](https://dictionaryapi.dev) ([source](https://github.com/meetDeveloper/freeDictionaryAPI)), built from [Wiktionary](https://en.wiktionary.org) content under CC BY-SA, or by Wiktionary's [REST API](https://en.wiktionary.org/api/rest_v1/) directly (text under CC BY-SA 4.0). Each entry carries its license and source urls; show them when you display definitions. This library is not affiliated with the Free Dictionary API or Wiktionary.
 
 ## License
 

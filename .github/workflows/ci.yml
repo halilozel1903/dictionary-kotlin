@@ -36,23 +36,68 @@ jobs:
       contents: write
     steps:
       - uses: actions/checkout@v5
-      - name: Check that the Free Dictionary API answers from this runner
-        # The screenshots show live entries only. If the API cannot be reached the job fails here, with a clear reason.
-        # It sends the library's own User-Agent, as the app does. On failure it prints the answer and how the API
-        # answers a browser User-Agent, so the log shows whether the runner or the client was refused.
+      - name: Pick the live source
+        id: source
+        # The screenshots show live entries only. The Free Dictionary API is used when it answers this runner; when
+        # it refuses (its Cloudflare protection challenges GitHub's runners), Wiktionary's REST API is used instead.
+        # If neither answers, the job fails here with a clear reason. Both use the library's own User-Agent.
         run: |
-          url="https://api.dictionaryapi.dev/api/v2/entries/en/serendipity"
           ua="dictionary-kotlin/1.0.0 (+https://github.com/halilozel1903/dictionary-kotlin)"
+          free="https://api.dictionaryapi.dev/api/v2/entries/en/serendipity"
+          wiki="https://en.wiktionary.org/api/rest_v1/page/definition/serendipity"
+          code=000
           for attempt in 1 2 3; do
-            code=$(curl -sS -A "$ua" -D headers.txt -o body.txt -w "%{http_code}" "$url" || echo 000)
-            echo "Attempt $attempt: HTTP $code"
-            [ "$code" = 200 ] && exit 0
+            code=$(curl -sS -A "$ua" -D free-headers.txt -o /dev/null -w "%{http_code}" "$free" || echo 000)
+            echo "Free Dictionary API, attempt $attempt: HTTP $code"
+            [ "$code" = 200 ] && break
             sleep 10
           done
-          cat headers.txt; head -c 600 body.txt; echo
-          echo "With a browser User-Agent: HTTP $(curl -s -o /dev/null -w '%{http_code}' -A 'Mozilla/5.0 (X11; Linux x86_64)' "$url")"
-          echo "::error::api.dictionaryapi.dev refused this runner"
-          exit 1
+          if [ "$code" = 200 ]; then
+            echo "source=freedictionary" >> "$GITHUB_OUTPUT"
+            echo "reason=it answered this runner" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          if grep -qi '^cf-mitigated: challenge' free-headers.txt; then
+            why="api.dictionaryapi.dev answered GitHub's runner with a Cloudflare challenge (HTTP $code)"
+          else
+            why="api.dictionaryapi.dev answered GitHub's runner with HTTP $code"
+          fi
+          echo "$why"
+          wcode=$(curl -sS -A "$ua" -o /dev/null -w "%{http_code}" "$wiki" || echo 000)
+          echo "Wiktionary REST API: HTTP $wcode"
+          if [ "$wcode" != 200 ]; then
+            echo "::error::Neither the Free Dictionary API nor Wiktionary answered this runner"
+            exit 1
+          fi
+          echo "source=wiktionary" >> "$GITHUB_OUTPUT"
+          echo "reason=$why" >> "$GITHUB_OUTPUT"
+      - name: Log what Wiktionary has for the scene words
+        if: steps.source.outputs.source == 'wiktionary'
+        run: |
+          ua="dictionary-kotlin/1.0.0 (+https://github.com/halilozel1903/dictionary-kotlin)"
+          mkdir -p wiktionary-check
+          for word in serendipity light happy; do
+            curl -sS -A "$ua" -o "wiktionary-check/$word.json" "https://en.wiktionary.org/api/rest_v1/page/definition/$word" || true
+          done
+          python3 - <<'PY'
+          import json, re
+          for word in ["serendipity", "light", "happy"]:
+              try:
+                  usages = json.load(open(f"wiktionary-check/{word}.json")).get("en", [])
+              except Exception as e:
+                  print(word, "unreadable:", e)
+                  continue
+              defs = [d.get("definition", "") for u in usages for d in u.get("definitions", [])]
+              print(f"{word}: {len(usages)} English parts of speech {[u.get('partOfSpeech') for u in usages]}, "
+                    f"{len(defs)} definitions, {sum(d.count('nyms synonym') for d in defs)} synonym lists, "
+                    f"{sum(d.count('nyms antonym') for d in defs)} antonym lists")
+              if defs:
+                  print("  first definition:", defs[0][:400])
+              nym = next((d for d in defs if "nyms synonym" in d), None)
+              if nym:
+                  i = nym.index("nyms synonym")
+                  print("  synonym markup:", nym[max(0, i - 40):i + 400])
+          PY
       - name: Enable KVM
         run: |
           echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
@@ -75,12 +120,28 @@ jobs:
           arch: x86_64
           profile: wearos_large_round
           disable-animations: true
-          script: bash scripts/screenshots.sh
+          script: DICTIONARY_SOURCE=${{ steps.source.outputs.source }} bash scripts/screenshots.sh
       - name: Commit screenshots
+        env:
+          SOURCE: ${{ steps.source.outputs.source }}
+          REASON: ${{ steps.source.outputs.reason }}
         run: |
           git config user.name "Halil Özel"
           git config user.email "halilozel1903@gmail.com"
-          git add docs/screenshots
+          # Say in the README which live source these screenshots came from, and why.
+          if [ "$SOURCE" = wiktionary ]; then
+            line="The screenshots below came from **Wiktionary's REST API** (\`DictionarySource.Wiktionary\`), because $REASON, so the word screen has no phonetic or play button."
+          else
+            line="The screenshots below came from the **Free Dictionary API** (\`DictionarySource.FreeDictionary\`), the default source, because $REASON."
+          fi
+          python3 - "$line" <<'PY'
+          import re, sys
+          text = open("README.md", encoding="utf-8").read()
+          new = re.sub(r"(<!-- screenshot-source -->\n).*?(\n<!-- /screenshot-source -->)", lambda m: m.group(1) + sys.argv[1] + m.group(2), text, flags=re.S)
+          assert new != text or sys.argv[1] in text, "README has no screenshot-source markers"
+          open("README.md", "w", encoding="utf-8").write(new)
+          PY
+          git add docs/screenshots README.md
           if git diff --cached --quiet; then
             echo "Screenshots unchanged"
           else

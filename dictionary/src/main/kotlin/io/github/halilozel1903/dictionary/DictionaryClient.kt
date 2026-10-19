@@ -21,6 +21,8 @@ import kotlin.coroutines.cancellation.CancellationException
 /**
  * A coroutine client for the [Free Dictionary API](https://dictionaryapi.dev): English words with phonetics,
  * pronunciation recordings, meanings by part of speech, definitions, examples, synonyms and antonyms. No API key.
+ * Set [DictionaryConfig.source] to [DictionarySource.Wiktionary] to read Wiktionary's REST API instead, into the
+ * same model (without phonetics and recordings).
  *
  * ```kotlin
  * val dictionary = DictionaryClient()
@@ -45,8 +47,11 @@ public class DictionaryClient(configure: DictionaryConfig.() -> Unit = {}) : Aut
 
     private val config = DictionaryConfig().apply(configure)
 
+    /** Where words are looked up. */
+    public val source: DictionarySource = config.source
+
     /** The API root, always ending with a slash. */
-    public val baseUrl: String = config.baseUrl.let { if (it.endsWith('/')) it else "$it/" }
+    public val baseUrl: String = (config.baseUrl ?: source.defaultBaseUrl).let { if (it.endsWith('/')) it else "$it/" }
 
     /** The language code used in urls. */
     public val language: String = config.language.trim().lowercase(Locale.ROOT).also {
@@ -65,8 +70,9 @@ public class DictionaryClient(configure: DictionaryConfig.() -> Unit = {}) : Aut
     private val inFlight = HashMap<String, CompletableDeferred<DictionaryResponse>>()
 
     /**
-     * `GET /entries/{language}/{word}`: looks [word] up. Returns [LookupResult.Found] with every entry, or
-     * [LookupResult.NotFound] when the API answers 404 "No Definitions Found".
+     * `GET /entries/{language}/{word}` (or Wiktionary's `GET /page/definition/{word}`): looks [word] up. Returns
+     * [LookupResult.Found] with every entry, or [LookupResult.NotFound] when the API answers 404 "No Definitions
+     * Found" (Wiktionary: 404, or a page without definitions in [language]).
      *
      * The word is trimmed, inner whitespace is collapsed and it is lowercased for the request (the dictionary is
      * case-insensitive), so "Hello " and "hello" share one cache entry. Phrases like "ice cream" work.
@@ -120,8 +126,10 @@ public class DictionaryClient(configure: DictionaryConfig.() -> Unit = {}) : Aut
         (transport as? AutoCloseable)?.close()
     }
 
-    private fun url(query: String): String =
-        baseUrl + language + "/" + URLEncoder.encode(query, Charsets.UTF_8).replace("+", "%20")
+    private fun url(query: String): String = when (source) {
+        DictionarySource.FreeDictionary -> baseUrl + language + "/" + URLEncoder.encode(query, Charsets.UTF_8).replace("+", "%20")
+        DictionarySource.Wiktionary -> baseUrl + WiktionaryJson.title(query)
+    }
 
     private fun ttl(status: Int): Long =
         (if (status == HTTP_NOT_FOUND) config.notFoundTtl else config.foundTtl).inWholeMilliseconds
@@ -130,14 +138,28 @@ public class DictionaryClient(configure: DictionaryConfig.() -> Unit = {}) : Aut
     private fun decode(query: String, url: String, status: Int, body: String): LookupResult = when (status) {
         in 200..299 -> {
             val entries = try {
-                DictionaryJson.parseEntries(body)
+                when (source) {
+                    DictionarySource.FreeDictionary -> DictionaryJson.parseEntries(body)
+                    DictionarySource.Wiktionary -> WiktionaryJson.parseEntries(normalize(query), language, body)
+                }
             } catch (e: Exception) {
                 throw DictionaryException.Decoding(url, e)
             }
-            if (entries.isEmpty()) DictionaryJson.parseNotFound(query, null) else LookupResult.Found(query, WordLookup(entries))
+            if (entries.isEmpty()) notFound(query, null) else LookupResult.Found(query, WordLookup(entries))
         }
-        HTTP_NOT_FOUND -> DictionaryJson.parseNotFound(query, body)
+        HTTP_NOT_FOUND -> notFound(query, body)
         else -> throw DictionaryException.Http(url, status)
+    }
+
+    private fun notFound(query: String, body: String?): LookupResult.NotFound = when (source) {
+        DictionarySource.FreeDictionary -> DictionaryJson.parseNotFound(query, body)
+        // Wiktionary's 404 body is a generic "Not found." problem; say what it means for a word instead.
+        DictionarySource.Wiktionary -> LookupResult.NotFound(
+            query = query,
+            title = LookupResult.NO_DEFINITIONS_FOUND,
+            message = "Wiktionary has no definitions of \"$query\" in this language.",
+            resolution = null,
+        )
     }
 
     /** Joins a request for the same url that is already running, or starts one. */
@@ -189,7 +211,7 @@ public class DictionaryClient(configure: DictionaryConfig.() -> Unit = {}) : Aut
     }
 
     public companion object {
-        /** `https://api.dictionaryapi.dev/api/v2/entries/`. */
+        /** `https://api.dictionaryapi.dev/api/v2/entries/`, the root of [DictionarySource.FreeDictionary]. */
         public const val DEFAULT_BASE_URL: String = "https://api.dictionaryapi.dev/api/v2/entries/"
 
         /** English, the language the Free Dictionary API serves. */

@@ -8,8 +8,9 @@ import androidx.compose.runtime.withFrameNanos
 import kotlinx.coroutines.delay
 
 /**
- * README screenshot scenes, opened with `--es scene <id>`. Each scene looks its words up LIVE in the Free
- * Dictionary API, exactly like a normal launch (no cache, no recorded data). [ReportScene] logs
+ * README screenshot scenes, opened with `--es scene <id>`. Each scene looks its words up LIVE in the source given
+ * with `--es source` (the Free Dictionary API or Wiktionary), exactly like a normal launch (no cache, no recorded
+ * data). [ReportScene] logs
  * `SCENE_READY <id>` once the live entry is on screen, or `SCENE_FAILED <id>: <reason>` when it could not be loaded
  * (offline, an HTTP error, "No Definitions Found"); `scripts/screenshots.sh` waits for the first and fails the CI
  * run on the second, so an error screen never ends up in the README.

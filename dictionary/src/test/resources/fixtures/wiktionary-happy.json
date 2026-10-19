@@ -1,0 +1,50 @@
+{
+  "en": [
+    {
+      "partOfSpeech": "Adjective",
+      "language": "English",
+      "definitions": [
+        {
+          "definition": "Having a feeling arising from a consciousness of well-being or of enjoyment; enjoying good of any kind, such as comfort, peace, or tranquillity; <a rel=\"mw:WikiLink\" href=\"/wiki/blissful\" title=\"blissful\">blissful</a>, <a rel=\"mw:WikiLink\" href=\"/wiki/contented\" title=\"contented\">contented</a>, <a rel=\"mw:WikiLink\" href=\"/wiki/joyous\" title=\"joyous\">joyous</a>.<dl><dd><span class=\"nyms synonym\"><span class=\"defdate\">Synonyms:</span> <span class=\"Latn\" lang=\"en\"><a rel=\"mw:WikiLink\" href=\"/wiki/cheerful\" title=\"cheerful\">cheerful</a></span>, <span class=\"Latn\" lang=\"en\"><a rel=\"mw:WikiLink\" href=\"/wiki/glad\" title=\"glad\">glad</a></span>, <span class=\"Latn\" lang=\"en\"><a rel=\"mw:WikiLink\" href=\"/wiki/joyful\" title=\"joyful\">joyful</a></span>; see also <span class=\"Latn\" lang=\"en\"><a rel=\"mw:WikiLink\" href=\"/wiki/Thesaurus:happy\" title=\"Thesaurus:happy\">Thesaurus:happy</a></span></span></dd><dd><span class=\"nyms antonym\"><span class=\"defdate\">Antonyms:</span> <span class=\"Latn\" lang=\"en\"><a rel=\"mw:WikiLink\" href=\"/wiki/sad\" title=\"sad\">sad</a></span>, <span class=\"Latn\" lang=\"en\"><a rel=\"mw:WikiLink\" href=\"/wiki/unhappy\" title=\"unhappy\">unhappy</a></span></span></dd></dl>",
+          "parsedExamples": [
+            {
+              "example": "Music makes her feel <b>happy</b>."
+            }
+          ],
+          "examples": [
+            "Music makes her feel <b>happy</b>."
+          ]
+        },
+        {
+          "definition": "<span class=\"ib-brac qualifier-brac\">(</span><span class=\"ib-content qualifier-content\">obsolete</span><span class=\"ib-brac qualifier-brac\">)</span> <a rel=\"mw:WikiLink\" href=\"/wiki/lucky\" title=\"lucky\">Lucky</a>, <a rel=\"mw:WikiLink\" href=\"/wiki/fortunate\" title=\"fortunate\">fortunate</a>&nbsp;&amp; <i>favoured</i>.<sup id=\"cite_ref-1\" class=\"reference\"><a href=\"#cite_note-1\">[1]</a></sup>"
+        },
+        {
+          "definition": ""
+        }
+      ]
+    },
+    {
+      "partOfSpeech": "Verb",
+      "language": "English",
+      "definitions": [
+        {
+          "definition": "<span class=\"ib-brac qualifier-brac\">(</span><span class=\"ib-content qualifier-content\">transitive</span><span class=\"ib-brac qualifier-brac\">)</span> To make happy.",
+          "examples": [
+            "It <b>happied</b> him to hear the news."
+          ]
+        }
+      ]
+    }
+  ],
+  "fr": [
+    {
+      "partOfSpeech": "Noun",
+      "language": "French",
+      "definitions": [
+        {
+          "definition": "A French sense that an English lookup must not show."
+        }
+      ]
+    }
+  ]
+}
