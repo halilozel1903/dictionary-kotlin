@@ -20,12 +20,11 @@ expected_text() {
     lookup) echo "Suggested words" ;;
     word) echo "serendipity" ;;
     meanings) echo "light · 1 of" ;;
-    synonyms) echo "of happy" ;;
   esac
 }
 
 install_sample
-for scene in lookup word meanings synonyms; do
+for scene in lookup word meanings; do
   fresh_launch --es scene "$scene" --es source "$DICTIONARY_SOURCE"
   wait_for_scene "$scene"
   capture "wear-$scene" "$(expected_text "$scene")"

@@ -18,8 +18,8 @@ public enum class DictionarySource(
 
     /**
      * Wiktionary's own [REST definition endpoint](https://en.wiktionary.org/api/rest_v1/#/Page%20content/get_page_definition__term_)
-     * (`GET /page/definition/{word}`): parts of speech, definitions, examples, and the synonyms and antonyms that
-     * Wiktionary lists inline under a definition. It has no phonetics or recordings, so
+     * (`GET /page/definition/{word}`): parts of speech, definitions and examples. It has no phonetics or recordings,
+     * and in practice no synonyms or antonyms (when a definition does carry an inline `nyms` list, it is read), so
      * [io.github.halilozel1903.dictionary.model.WordLookup.phonetic] is `null` and
      * [io.github.halilozel1903.dictionary.model.WordLookup.pronunciation] returns `null`.
      * [DictionaryConfig.language] picks the language section of the page (`en` is English). Wikimedia asks for a

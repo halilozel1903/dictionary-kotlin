@@ -21,9 +21,9 @@ import java.util.Locale
  *  "fr": [...]}
  * ```
  *
- * The top-level keys are language codes. Definitions and examples are HTML; they become plain text, and the
- * synonyms and antonyms Wiktionary lists inline under a definition (`<span class="nyms synonym">`) become
- * [Definition.synonyms] and [Definition.antonyms]. Wiktionary has no phonetics or recordings here.
+ * The top-level keys are language codes. Definitions and examples are HTML; they become plain text. This endpoint
+ * has no phonetics or recordings and usually no synonyms; when a definition does carry an inline nym list
+ * (`<span class="nyms synonym">`), it becomes [Definition.synonyms] or [Definition.antonyms].
  */
 public object WiktionaryJson {
     private val json = Json { ignoreUnknownKeys = true }

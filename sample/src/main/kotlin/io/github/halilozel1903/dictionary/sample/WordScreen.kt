@@ -143,10 +143,10 @@ private fun WordDetail(lookup: WordLookup, pronouncer: Pronouncer, onOpen: (Scre
                     secondaryLabel = { Text("${plural(lookup.meanings.size, "part")} of speech · ${plural(lookup.definitions.size, "definition")}", maxLines = 1, overflow = TextOverflow.Ellipsis) },
                 )
             }
-            item {
+            // Wiktionary's definition endpoint has no synonyms; offer the screen only when there is something on it.
+            if (synonyms + antonyms > 0) item {
                 Button(
                     onClick = { onOpen(Screen.Synonyms(lookup.word)) },
-                    enabled = synonyms + antonyms > 0,
                     modifier = Modifier.fillMaxWidth().transformedHeight(this, spec),
                     transformation = SurfaceTransformation(spec),
                     colors = ButtonDefaults.filledTonalButtonColors(),

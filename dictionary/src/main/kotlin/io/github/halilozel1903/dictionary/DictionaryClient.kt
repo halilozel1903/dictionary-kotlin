@@ -22,7 +22,7 @@ import kotlin.coroutines.cancellation.CancellationException
  * A coroutine client for the [Free Dictionary API](https://dictionaryapi.dev): English words with phonetics,
  * pronunciation recordings, meanings by part of speech, definitions, examples, synonyms and antonyms. No API key.
  * Set [DictionaryConfig.source] to [DictionarySource.Wiktionary] to read Wiktionary's REST API instead, into the
- * same model (without phonetics and recordings).
+ * same model (without phonetics, recordings and, usually, synonyms).
  *
  * ```kotlin
  * val dictionary = DictionaryClient()

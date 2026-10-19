@@ -71,33 +71,6 @@ jobs:
           fi
           echo "source=wiktionary" >> "$GITHUB_OUTPUT"
           echo "reason=$why" >> "$GITHUB_OUTPUT"
-      - name: Log what Wiktionary has for the scene words
-        if: steps.source.outputs.source == 'wiktionary'
-        run: |
-          ua="dictionary-kotlin/1.0.0 (+https://github.com/halilozel1903/dictionary-kotlin)"
-          mkdir -p wiktionary-check
-          for word in serendipity light happy; do
-            curl -sS -A "$ua" -o "wiktionary-check/$word.json" "https://en.wiktionary.org/api/rest_v1/page/definition/$word" || true
-          done
-          python3 - <<'PY'
-          import json, re
-          for word in ["serendipity", "light", "happy"]:
-              try:
-                  usages = json.load(open(f"wiktionary-check/{word}.json")).get("en", [])
-              except Exception as e:
-                  print(word, "unreadable:", e)
-                  continue
-              defs = [d.get("definition", "") for u in usages for d in u.get("definitions", [])]
-              print(f"{word}: {len(usages)} English parts of speech {[u.get('partOfSpeech') for u in usages]}, "
-                    f"{len(defs)} definitions, {sum(d.count('nyms synonym') for d in defs)} synonym lists, "
-                    f"{sum(d.count('nyms antonym') for d in defs)} antonym lists")
-              if defs:
-                  print("  first definition:", defs[0][:400])
-              nym = next((d for d in defs if "nyms synonym" in d), None)
-              if nym:
-                  i = nym.index("nyms synonym")
-                  print("  synonym markup:", nym[max(0, i - 40):i + 400])
-          PY
       - name: Enable KVM
         run: |
           echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
@@ -130,7 +103,7 @@ jobs:
           git config user.email "halilozel1903@gmail.com"
           # Say in the README which live source these screenshots came from, and why.
           if [ "$SOURCE" = wiktionary ]; then
-            line="The screenshots below came from **Wiktionary's REST API** (\`DictionarySource.Wiktionary\`), because $REASON, so the word screen has no phonetic or play button."
+            line="The screenshots below came from **Wiktionary's REST API** (\`DictionarySource.Wiktionary\`), because $REASON, so the word screen has no phonetic or play button and the synonyms screen is not pictured: Wiktionary's definition endpoint has no recordings and no synonyms."
           else
             line="The screenshots below came from the **Free Dictionary API** (\`DictionarySource.FreeDictionary\`), the default source, because $REASON."
           fi
